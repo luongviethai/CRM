@@ -1,3 +1,5 @@
+using CRM.Application.Products;
+using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace CRM.Application;
@@ -6,8 +8,12 @@ public static class DependencyInjection
 {
     public static IServiceCollection AddApplication(this IServiceCollection services)
     {
-        // Đăng ký service của tầng Application (FluentValidation, AutoMapper/Mapster, MediatR...)
-        // sẽ bổ sung dần từ tuần 1 ngày 5 trở đi.
+        services.AddScoped<IProductService, ProductService>();
+
+        // Quét toàn bộ assembly Application, tự đăng ký mọi class kế thừa AbstractValidator<T>
+        // (dùng IProductService chỉ để trỏ đúng assembly cần quét, không liên quan tới validator).
+        services.AddValidatorsFromAssemblyContaining<IProductService>();
+
         return services;
     }
 }

@@ -105,19 +105,11 @@ Xây dựng Web API quản lý bán hàng và kho cho một cửa hàng/doanh ng
 | RolePermission | bảng nối n-n giữa Role và Permission |
 | RefreshToken | TokenHash, UserId, ExpiresAt, RevokedAt, ReplacedByToken |
 
-## 4. Sơ đồ quan hệ (gợi ý vẽ ERD)
+## 4. Sơ đồ quan hệ
 
-```
-Category 1───n Product n───1 Supplier
-Customer 1───n Order 1───n OrderItem n───1 Product
-Product 1───n StockMovement
-Role n───n Permission (qua RolePermission)
-User n───n Role (Identity có sẵn)
-User 1───n RefreshToken
-Order n───1 User (CreatedByUserId)
-StockMovement n───1 User (CreatedByUserId)
-```
-Vẽ bằng dbdiagram.io hoặc draw.io, xuất ảnh lưu kèm README.
+ERD đầy đủ (Mermaid, render trực tiếp trên GitHub/GitLab/VS Code) xem tại [erd.md](erd.md) — luôn cập nhật khớp với entity thật trong code, kèm bảng giải thích delete behavior (Restrict/Cascade).
+
+Các bảng chưa có trong code (sẽ thêm ở Tuần 2-3, ERD cập nhật khi đó): `StockMovement`, `Role`/`Permission` (qua `RolePermission`), `RefreshToken`.
 
 ## 5. Quy tắc nghiệp vụ
 

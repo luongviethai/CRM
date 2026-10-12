@@ -42,13 +42,13 @@ Dựng được một Web API quản lý bán hàng/kho hoàn chỉnh: CRUD nghi
 **Mục tiêu cuối ngày:** API kết nối được PostgreSQL (qua Docker Compose), bảng `__EFMigrationsHistory` xuất hiện trong DB.
 
 ### Ngày 3 (Thứ 4) — Thiết kế entity và ERD
-- [ ] Vẽ ERD cho: Product, Category, Supplier, Customer, Order, OrderItem, StockMovement (xem chi tiết field ở tài liệu nghiệp vụ)
-- [ ] Code entity trong `Domain` với navigation property đúng chiều
-- [ ] Xác định quan hệ 1-n (Category 1-n Product, Supplier 1-n Product) và n-n (Order n-n Product qua OrderItem)
-- [ ] Cấu hình Fluent API (`IEntityTypeConfiguration<T>`) cho khóa ngoại, độ dài field, required
-- [ ] Tạo migration cho toàn bộ entity, `database update`
+- [x] Vẽ ERD cho: Product, Category, Supplier, Customer, Order, OrderItem (dùng Mermaid, lưu tại `docs/erd.md` — `StockMovement` để dành Tuần 3)
+- [x] Code entity trong `Domain` với navigation property đúng chiều
+- [x] Xác định quan hệ 1-n (Category 1-n Product, Supplier 1-n Product, Order 1-n OrderItem, Customer 1-n Order, User 1-n Order)
+- [x] Cấu hình Fluent API (`IEntityTypeConfiguration<T>`) cho khóa ngoại, độ dài field, required
+- [x] Tạo migration cho toàn bộ entity, `database update`
 
-**Mục tiêu cuối ngày:** ERD hoàn chỉnh (file ảnh hoặc link lưu trong repo), toàn bộ bảng đã tạo đúng quan hệ trong DB.
+**Mục tiêu cuối ngày:** đạt — ERD tại `docs/erd.md`, toàn bộ bảng đã tạo đúng quan hệ trong DB.
 
 ### Ngày 4 (Thứ 5) — Seed data
 - [ ] Viết seed data cho Category, Supplier, Customer, Product (đủ để test CRUD và nghiệp vụ tuần 3)
@@ -59,13 +59,17 @@ Dựng được một Web API quản lý bán hàng/kho hoàn chỉnh: CRUD nghi
 **Mục tiêu cuối ngày:** DB có dữ liệu mẫu đủ dùng, không lỗi migration khi seed lại từ đầu.
 
 ### Ngày 5 (Thứ 6) — CRUD Product + Category
-- [ ] CRUD Product: Create/Read/Update/Delete qua Controller hoặc Minimal API
-- [ ] CRUD Category tương tự
-- [ ] Tạo DTO riêng cho request/response (không trả entity trực tiếp), cấu hình mapping (AutoMapper/Mapster hoặc map tay)
-- [ ] Tích hợp FluentValidation cho DTO (ví dụ: `Name` required, `Price >= 0`)
-- [ ] Test thủ công qua Swagger
+- [x] CRUD Product: Create/Read/Update/Delete qua Controller (đã chọn Controller thay vì Minimal API)
+- [ ] CRUD Category tương tự — dời sang Ngày 6, gộp chung với Supplier/Customer (cùng là CRUD đơn giản không FK, lặp lại pattern Product)
+- [x] Tạo DTO riêng cho request/response (không trả entity trực tiếp), map tay bằng extension method (`ToDto`/`ToEntity`/`ApplyTo`) — chọn không dùng Mapster/AutoMapper cho project này
+- [x] Tích hợp FluentValidation cho `CreateProductRequest` và `UpdateProductRequest` (`SKU`, `Name`, `Price`, `StockQuantity`, `CategoryId`, `SupplierId`), gắn vào Controller cả 2 action
+- [x] Test thủ công qua curl/http file (chưa cài Swagger UI, `AddOpenApi()` hiện chỉ có JSON thô — xem ghi chú kiến thức)
 
-**Mục tiêu cuối ngày:** CRUD Product & Category chạy đầy đủ qua Swagger, có validate lỗi trả về rõ ràng.
+**Mục tiêu cuối ngày:** đạt — CRUD Product chạy đúng qua test thật, có validate đầy đủ cho cả Create và Update. Category dời sang Ngày 6 cùng Supplier/Customer.
+
+> **Đã dọn xong (Ngày 5, "dọn hết một lần"):** 27 warning nullable đã sửa hết (field optional → `string?`, field bắt buộc → `required`, navigation property → `= null!`), migration `FixOptionalFieldsNullability` đã áp dụng; `ProductDto`/`CreateProductRequest`/`UpdateProductRequest.Description` đồng bộ nullable theo entity. Build toàn solution: 0 warning, 0 error.
+
+> Tổng kết chi tiết Ngày 5 (kiến trúc, lỗi thật gặp phải, bài học) xem ở cuối ngày trong hội thoại — đáng đọc lại trước khi làm Category vì sẽ lặp lại đúng pattern.
 
 ### Ngày 6 (Thứ 7, nhiều thời gian hơn) — CRUD Supplier/Customer + paging/filter/sort
 - [ ] CRUD Supplier, CRUD Customer
