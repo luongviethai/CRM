@@ -1,4 +1,5 @@
 using CRM.Application.Common.Interfaces;
+using CRM.Application.Common.Models;
 using CRM.Application.Customers.Dtos;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,13 +14,45 @@ public class CustomerService : ICustomerService
         _context = context;
     }
 
-    public async Task<IEnumerable<CustomerDto>> GetAllAsync()
+    public async Task<PageResult<CustomerDto>> GetAllAsync(CustomerQueryParams? queryParams)
     {
-        var customers = await _context.Customers
+        var pageNumber = queryParams?.Page ?? 1;
+
+        var pageSize = queryParams?.PageSize ?? 10;
+
+        var query = _context.Customers.AsQueryable();
+
+        if (!string.IsNullOrWhiteSpace(queryParams?.Name))
+        {
+            query = query.Where(c => c.Name.Contains(queryParams.Name));
+        }
+
+        query = queryParams?.SortBy?.ToLower() switch
+        {
+            "email" => queryParams.SortDescending
+                ? query.OrderByDescending(c => c.Email)
+                : query.OrderBy(c => c.Email),
+            "name" => queryParams.SortDescending
+                ? query.OrderByDescending(c => c.Name)
+                : query.OrderBy(c => c.Name),
+            _ => query.OrderBy(c => c.Id)
+        };
+
+        var totalCount = await query.CountAsync();
+
+        var customers = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(c => c.ToDto())
             .ToListAsync();
 
-        return customers;
+        return new PageResult<CustomerDto>
+        {
+            Items = customers,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+        };
     }
 
     public async Task<CustomerDto?> GetByIdAsync(int id)

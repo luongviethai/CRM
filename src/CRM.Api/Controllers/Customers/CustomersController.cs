@@ -24,9 +24,9 @@ public class CustomersController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] CustomerQueryParams? queryParams)
     {
-        var customers = await _customerService.GetAllAsync();
+        var customers = await _customerService.GetAllAsync(queryParams);
         return Ok(customers);
     }
 

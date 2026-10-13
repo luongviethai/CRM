@@ -1,4 +1,5 @@
 using CRM.Application.Common.Interfaces;
+using CRM.Application.Common.Models;
 using CRM.Application.Products.Dtos;
 using Microsoft.EntityFrameworkCore;
 
@@ -13,15 +14,55 @@ public class ProductService : IProductService
         _context = context;
     }
 
-    public async Task<IEnumerable<ProductDto>> GetAllAsync()
+    public async Task<PageResult<ProductDto>> GetAllAsync(ProductQueryParams? queryParams)
     {
-        var products = await _context
-            .Products.Include(p => p.Category)
+        var pageNumber = queryParams?.Page ?? 1;
+
+        var pageSize = queryParams?.PageSize ?? 10;
+
+        var query = _context.Products
+            .Include(p => p.Category)
             .Include(p => p.Supplier)
+            .AsQueryable();
+
+        if (queryParams?.CategoryId is int categoryId)
+        {
+            query = query.Where(p => p.CategoryId == categoryId);
+        }
+
+        if (!string.IsNullOrWhiteSpace(queryParams?.Name))
+        {
+            query = query.Where(p => p.Name.Contains(queryParams.Name));
+        }
+
+        query = queryParams?.SortBy?.ToLower() switch
+        {
+            "name" => queryParams.SortDescending
+                ? query.OrderByDescending(p => p.Name)
+                : query.OrderBy(p => p.Name),
+            "price" => queryParams.SortDescending
+                ? query.OrderByDescending(p => p.Price)
+                : query.OrderBy(p => p.Price),
+            _ => query.OrderBy(p => p.Id)
+        };
+
+        // Đếm sau khi filter, trước khi phân trang: đây là tổng số dòng KHỚP điều kiện,
+        // không phải tổng số dòng toàn bảng.
+        var totalCount = await query.CountAsync();
+
+        var products = await query
+            .Skip((pageNumber - 1) * pageSize)
+            .Take(pageSize)
             .Select(p => p.ToDto())
             .ToListAsync();
 
-        return products;
+        return new PageResult<ProductDto>
+        {
+            Items = products,
+            TotalCount = totalCount,
+            PageNumber = pageNumber,
+            PageSize = pageSize,
+        };
     }
 
     public async Task<ProductDto?> GetByIdAsync(int id)

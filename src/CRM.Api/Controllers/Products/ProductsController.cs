@@ -2,6 +2,7 @@ using CRM.Application.Products;
 using CRM.Application.Products.Dtos;
 using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using CRM.Application.Common.Models;
 
 namespace CRM.Api.Controllers;
 
@@ -24,9 +25,9 @@ public class ProductsController : ControllerBase
     }
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
+    public async Task<IActionResult> GetAll([FromQuery] ProductQueryParams? queryParams)
     {
-        var products = await _productService.GetAllAsync();
+        var products = await _productService.GetAllAsync(queryParams);
         return Ok(products);
     }
 
