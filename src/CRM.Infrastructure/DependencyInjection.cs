@@ -1,5 +1,7 @@
 using CRM.Application.Common.Interfaces;
+using CRM.Infrastructure.Identity;
 using CRM.Infrastructure.Persistence;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -16,6 +18,10 @@ public static class DependencyInjection
         services.AddDbContext<AppDbContext>(options => options.UseNpgsql(connectionString));
 
         services.AddScoped<IApplicationDbContext>(sp => sp.GetRequiredService<AppDbContext>());
+
+        services
+            .AddIdentity<ApplicationUser, ApplicationRole>()
+            .AddEntityFrameworkStores<AppDbContext>();
 
         // Đăng ký repository... sẽ bổ sung từ Ngày 3 trở đi.
         return services;

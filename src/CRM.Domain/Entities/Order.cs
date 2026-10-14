@@ -15,8 +15,10 @@ namespace CRM.Domain.Entities
 
         public string? Notes { get; set; }
 
+        // Id của user đã tạo đơn — chỉ scalar FK, không có navigation property vì
+        // user thật (ApplicationUser) sống ở Infrastructure (ASP.NET Identity), Domain
+        // không được phụ thuộc Infrastructure. Quan hệ được cấu hình ở OrderConfiguration.
         public int CreatedBy { get; set; }
-        public User CreatedByUser { get; set; } = null!;
 
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
     }

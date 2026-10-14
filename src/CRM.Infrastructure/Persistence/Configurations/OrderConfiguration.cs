@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 using CRM.Domain.Entities;
+using CRM.Infrastructure.Identity;
 
 namespace CRM.Infrastructure.Persistence.Configurations
 {
@@ -26,8 +27,10 @@ namespace CRM.Infrastructure.Persistence.Configurations
                    .HasForeignKey(o => o.CustomerId)
                    .OnDelete(DeleteBehavior.Restrict); // không xóa Customer còn lịch sử đơn hàng
 
-            builder.HasOne(o => o.CreatedByUser)
-                   .WithMany(u => u.CreatedOrders)
+            // Order không có navigation property sang user (xem ghi chú ở Order.cs) — cấu hình
+            // quan hệ 1 chiều tới ApplicationUser (AspNetUsers) chỉ qua FK, không qua CLR property.
+            builder.HasOne<ApplicationUser>()
+                   .WithMany()
                    .HasForeignKey(o => o.CreatedBy)
                    .OnDelete(DeleteBehavior.Restrict); // giữ truy vết ai tạo đơn, không xóa User kéo theo mất dữ liệu
 

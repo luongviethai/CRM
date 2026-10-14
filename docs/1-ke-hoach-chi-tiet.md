@@ -109,13 +109,15 @@ Tự trả lời trước khi qua tuần 2:
 > Lưu ý từ roadmap: nếu hết tuần mà `IAuthorizationHandler` + policy provider động chưa xong, dùng tạm `[Authorize(Policy="product.create")]` với policy khai báo tĩnh trong `Program.cs`, ghi nợ phần policy provider động để hoàn thiện ở Project 2. **Không bỏ JWT/refresh token** trong mọi trường hợp.
 
 ### Ngày 8 (Thứ 2) — ASP.NET Identity
-- [ ] Cài `Microsoft.AspNetCore.Identity.EntityFrameworkCore`
-- [ ] Tạo `ApplicationUser` kế thừa `IdentityUser` (thêm `FullName` nếu cần), `ApplicationRole` nếu cần custom
-- [ ] Tích hợp Identity vào `AppDbContext` hiện có (không tạo DbContext riêng)
-- [ ] Migration cho bảng Identity, `database update`
-- [ ] Đăng ký `AddIdentity<ApplicationUser, ApplicationRole>` trong `Program.cs`
+- [x] Cài `Microsoft.AspNetCore.Identity.EntityFrameworkCore`
+- [x] Tạo `ApplicationUser : IdentityUser<int>` (thêm `FullName`), `ApplicationRole : IdentityRole<int>` — đặt ở `CRM.Infrastructure/Identity/`, không phải Domain (Domain không được phụ thuộc framework)
+- [x] Tích hợp Identity vào `AppDbContext` hiện có: đổi kế thừa `DbContext` → `IdentityDbContext<ApplicationUser, ApplicationRole, int>`, gọi `base.OnModelCreating` trước
+- [x] Xóa entity tạm `Domain/Entities/User.cs`; `Order` bỏ navigation property `CreatedByUser`, chỉ giữ `CreatedBy` (int scalar FK) — quan hệ sang `AspNetUsers` cấu hình 1 chiều ở `OrderConfiguration` (`HasOne<ApplicationUser>().WithMany()`, không có nav property phía Domain)
+- [x] Migration `AddAspNetIdentity`, `database update` — đã áp dụng, xác nhận bằng `\dt` thấy đủ 7 bảng `AspNet*`
+- [x] Đăng ký `AddIdentity<ApplicationUser, ApplicationRole>().AddEntityFrameworkStores<AppDbContext>()` — đặt trong `Infrastructure/DependencyInjection.cs` (không phải trực tiếp `Program.cs`) để nhất quán với cách đăng ký DbContext đã có
+- [x] Thêm `<FrameworkReference Include="Microsoft.AspNetCore.App" />` vào `CRM.Infrastructure.csproj` — `AddIdentity` sống trong shared framework ASP.NET Core, class library thường không tự có reference này
 
-**Mục tiêu cuối ngày:** bảng `AspNetUsers`, `AspNetRoles`,... xuất hiện trong DB, build chạy không lỗi.
+**Mục tiêu cuối ngày:** đạt — bảng `AspNetUsers`, `AspNetRoles`,... xuất hiện trong DB, build chạy sạch 0 warning/error, API cũ (Product/Category/Supplier/Customer) vẫn chạy đúng sau khi đổi `AppDbContext`.
 
 ### Ngày 9 (Thứ 3) — Đăng ký/Đăng nhập + JWT access token
 - [ ] Endpoint Register (dùng `UserManager.CreateAsync`)
