@@ -72,20 +72,25 @@ Dựng được một Web API quản lý bán hàng/kho hoàn chỉnh: CRUD nghi
 > Tổng kết chi tiết Ngày 5 (kiến trúc, lỗi thật gặp phải, bài học) xem ở cuối ngày trong hội thoại — đáng đọc lại trước khi làm Category vì sẽ lặp lại đúng pattern.
 
 ### Ngày 6 (Thứ 7, nhiều thời gian hơn) — CRUD Supplier/Customer + paging/filter/sort
-- [ ] CRUD Supplier, CRUD Customer
-- [ ] Viết helper paging chung (page, pageSize, tổng số item) áp dụng cho danh sách Product
-- [ ] Thêm filter (theo CategoryId, theo tên) và sort (theo tên, theo giá) cho API list Product
-- [ ] Áp dụng paging/filter/sort cho ít nhất 1 danh sách khác (Order sẽ dùng lại ở tuần 3)
+- [x] CRUD Category, Supplier, Customer (Category dời từ Ngày 5)
+- [x] Viết helper paging chung — `PageResult<T>` (generic, dùng lại được cho mọi danh sách)
+- [x] Thêm filter (theo CategoryId, theo tên) và sort (theo tên, theo giá) cho API list Product
+- [x] Áp dụng paging/filter/sort cho Customer (filter theo tên, sort theo tên/email) — Order sẽ dùng lại pattern này ở tuần 3
 
-**Mục tiêu cuối ngày:** tất cả API list đều hỗ trợ paging; API Product hỗ trợ filter + sort.
+**Mục tiêu cuối ngày:** đạt — tất cả API list đều hỗ trợ paging; API Product và Customer hỗ trợ filter + sort.
 
 ### Ngày 7 (Chủ nhật, nhiều thời gian hơn) — Exception handling, chống N+1, tổng kết tuần
-- [ ] Viết global exception handler (`IExceptionHandler` hoặc middleware), trả về `ProblemDetails` chuẩn
-- [ ] Rà lại các query list/detail có navigation property → kiểm tra N+1 bằng cách log SQL (EF Core logging hoặc Serilog tạm thời)
-- [ ] Sửa N+1 bằng `Include` hợp lý hoặc projection (`Select` sang DTO thẳng) — ghi lại chỗ nào chọn cách nào và vì sao
+- [x] Viết global exception handler (`IExceptionHandler`), trả về `ProblemDetails` chuẩn
+- [x] Rà lại các query list/detail có navigation property → kiểm tra N+1 bằng cách bật log SQL tạm thời (`LogTo` + `EnableSensitiveDataLogging`)
+- [x] Kết quả rà soát — không có N+1 ở API nào, không cần sửa gì thêm:
+  - `GET /api/products` (list, paging): đúng 2 query — 1 `COUNT`, 1 `SELECT` có `INNER JOIN Categories/Suppliers` + `LIMIT/OFFSET`. Dùng `Include` vì DTO cần `CategoryName`/`SupplierName`.
+  - `GET /api/products/{id}` (detail): 1 query, `INNER JOIN` tương tự.
+  - `GET /api/categories`, `/api/suppliers`: 1 query đơn giản, không `JOIN` — đúng vì 2 entity này không có FK ra ngoài, DTO không cần `Include`.
+  - `GET /api/customers` (có filter+sort+paging): đúng 2 query — 1 `COUNT` (có `WHERE ... LIKE` khi filter theo tên), 1 `SELECT` có `WHERE/ORDER BY/LIMIT/OFFSET`.
+  - Kết luận: vì EF Core không bật lazy loading (không cài `Microsoft.EntityFrameworkCore.Proxies`), và toàn bộ code đều dùng `Include`/projection tường minh thay vì lazy-load navigation property trong vòng lặp, nên không có đường nào sinh ra N+1.
 - [ ] Dọn code, commit, viết chú thích ngắn trong README nếu còn thiếu phần nào
 
-**Mục tiêu cuối ngày:** không còn N+1 ở các API đã làm, lỗi trả về đúng format `ProblemDetails`.
+**Mục tiêu cuối ngày:** đạt — không có N+1 ở các API đã làm (xác nhận qua log SQL thật), lỗi trả về đúng format `ProblemDetails`.
 
 ### Tổng kết tuần 1
 Tự trả lời trước khi qua tuần 2:
