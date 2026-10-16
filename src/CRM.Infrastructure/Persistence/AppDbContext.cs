@@ -18,6 +18,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
+    public DbSet<RefreshToken> RefreshTokens { get; set; }
 
     protected override void OnModelCreating(ModelBuilder builder)
     {

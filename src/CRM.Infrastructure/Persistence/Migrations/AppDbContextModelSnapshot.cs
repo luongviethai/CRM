@@ -341,6 +341,45 @@ namespace CRM.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("CRM.Infrastructure.Identity.RefreshToken", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("ExpiresAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ReplacedByTokenHash")
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime?>("RevokedAtUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RefreshTokens");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
                 {
                     b.Property<int>("Id")
@@ -497,6 +536,17 @@ namespace CRM.Infrastructure.Persistence.Migrations
                     b.Navigation("Category");
 
                     b.Navigation("Supplier");
+                });
+
+            modelBuilder.Entity("CRM.Infrastructure.Identity.RefreshToken", b =>
+                {
+                    b.HasOne("CRM.Infrastructure.Identity.ApplicationUser", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

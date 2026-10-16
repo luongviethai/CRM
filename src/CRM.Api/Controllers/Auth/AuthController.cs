@@ -14,17 +14,20 @@ public class AuthController : ControllerBase
     private readonly ITokenService _tokenService;
     private readonly IValidator<RegisterRequest> _registerValidator;
     private readonly IValidator<LoginRequest> _loginValidator;
+    private readonly IValidator<RefreshRequest> _refreshValidator;
 
     public AuthController(
         IIdentityService identityService,
         ITokenService tokenService,
         IValidator<RegisterRequest> registerValidator,
-        IValidator<LoginRequest> loginValidator)
+        IValidator<LoginRequest> loginValidator,
+        IValidator<RefreshRequest> refreshValidator)
     {
         _identityService = identityService;
         _tokenService = tokenService;
         _registerValidator = registerValidator;
         _loginValidator = loginValidator;
+        _refreshValidator = refreshValidator;
     }
 
     [HttpPost("register")]
@@ -60,9 +63,49 @@ public class AuthController : ControllerBase
             return Unauthorized();
         }
 
-        var token = _tokenService.GenerateAccessToken(credentials);
+        var accessToken = _tokenService.GenerateAccessToken(credentials);
+        var refreshToken = await _identityService.IssueRefreshTokenAsync(credentials.UserId);
 
-        return Ok(new AuthResponse(token.Value, token.ExpiresAtUtc, credentials.Email, credentials.FullName));
+        return Ok(new AuthResponse(
+            accessToken.Value,
+            accessToken.ExpiresAtUtc,
+            refreshToken.Value,
+            refreshToken.ExpiresAtUtc,
+            credentials.Email,
+            credentials.FullName));
+    }
+
+    [HttpPost("refresh")]
+    public async Task<IActionResult> Refresh([FromBody] RefreshRequest request)
+    {
+        var validationResult = await _refreshValidator.ValidateAsync(request);
+        if (!validationResult.IsValid)
+        {
+            return BadRequest(validationResult.Errors);
+        }
+
+        var result = await _identityService.RefreshAsync(request.RefreshToken);
+        if (!result.Succeeded || result.User is null || result.RefreshToken is null)
+        {
+            return Unauthorized();
+        }
+
+        var accessToken = _tokenService.GenerateAccessToken(result.User);
+
+        return Ok(new AuthResponse(
+            accessToken.Value,
+            accessToken.ExpiresAtUtc,
+            result.RefreshToken.Value,
+            result.RefreshToken.ExpiresAtUtc,
+            result.User.Email,
+            result.User.FullName));
+    }
+
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout([FromBody] RefreshRequest request)
+    {
+        await _identityService.RevokeRefreshTokenAsync(request.RefreshToken);
+        return NoContent();
     }
 
     // Endpoint tạm để xác nhận JWT hoạt động đúng — xem được claims thật sự nằm trong token

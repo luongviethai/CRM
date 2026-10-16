@@ -131,12 +131,13 @@ Tự trả lời trước khi qua tuần 2:
 **Mục tiêu cuối ngày:** đăng ký → đăng nhập → nhận JWT → gọi được endpoint có `[Authorize]`.
 
 ### Ngày 10 (Thứ 4) — Refresh token
-- [ ] Thiết kế entity `RefreshToken` (TokenHash, UserId, ExpiresAt, RevokedAt, ReplacedByToken...)
-- [ ] Endpoint refresh: nhận refresh token cũ → kiểm tra hợp lệ/chưa revoke → phát access token mới + refresh token mới (rotate)
-- [ ] Revoke refresh token khi logout hoặc khi phát hiện token cũ bị dùng lại sau khi đã rotate (reuse detection cơ bản)
-- [ ] Lưu refresh token đã **hash**, không lưu plain text trong DB
+- [x] Entity `RefreshToken` (`TokenHash`, `UserId`, `CreatedAtUtc`, `ExpiresAtUtc`, `RevokedAtUtc`, `ReplacedByTokenHash`) — đặt ở `CRM.Infrastructure/Identity/` cùng `ApplicationUser` (không phải business entity nên không ở Domain)
+- [x] `POST /api/auth/refresh`: nhận refresh token cũ → kiểm tra hợp lệ/chưa revoke/chưa hết hạn → phát access token mới + refresh token mới (rotate, 1 `SaveChangesAsync` duy nhất cho cả revoke-cũ + tạo-mới)
+- [x] `POST /api/auth/logout`: revoke refresh token hiện tại
+- [x] Reuse detection: refresh token đã bị revoke mà bị dùng lại → revoke **toàn bộ** refresh token còn sống của user đó, buộc login lại từ đầu
+- [x] Lưu `TokenHash` (SHA-256), không lưu plain text — chỉ trả plain token 1 lần duy nhất lúc phát hành
 
-**Mục tiêu cuối ngày:** luồng login → refresh → logout hoạt động đầy đủ, refresh token cũ không dùng lại được sau khi rotate.
+**Mục tiêu cuối ngày:** đạt — test thật bằng curl: login → refresh (rotate, token mới khác token cũ) → dùng lại token cũ → 401 + token mới cũng bị revoke theo (reuse detection) → logout → dùng lại sau logout → 401. Verify trực tiếp trong Postgres: `TokenHash` là hash hex, không phải token gốc.
 
 ### Ngày 11 (Thứ 5) — Role-based authorization
 - [ ] Seed 3 role: Admin, Manager, Staff lúc khởi động app (idempotent, không tạo trùng)
