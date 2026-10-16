@@ -120,10 +120,13 @@ Tự trả lời trước khi qua tuần 2:
 **Mục tiêu cuối ngày:** đạt — bảng `AspNetUsers`, `AspNetRoles`,... xuất hiện trong DB, build chạy sạch 0 warning/error, API cũ (Product/Category/Supplier/Customer) vẫn chạy đúng sau khi đổi `AppDbContext`.
 
 ### Ngày 9 (Thứ 3) — Đăng ký/Đăng nhập + JWT access token
-- [ ] Endpoint Register (dùng `UserManager.CreateAsync`)
-- [ ] Endpoint Login: verify password, phát access token JWT (claims: userId, email, roles)
-- [ ] Cấu hình `AddAuthentication().AddJwtBearer(...)` với issuer/audience/signing key từ config
-- [ ] Thử 1 endpoint `[Authorize]` đơn giản để xác nhận JWT hoạt động
+- [x] `IIdentityService`/`ITokenService` ở Application (chỉ dùng kiểu nguyên thủy/record, không lộ `ApplicationUser`); `IdentityService`/`JwtTokenService` implement ở Infrastructure
+- [x] Endpoint Register (`POST /api/auth/register`, dùng `UserManager.CreateAsync`)
+- [x] Endpoint Login (`POST /api/auth/login`): verify password qua `UserManager.CheckPasswordAsync`, phát access token JWT (claims: NameIdentifier/Email/Name/Role)
+- [x] Cấu hình `AddAuthentication().AddJwtBearer(...)` với issuer/audience/signing key từ config (`appsettings.Development.json` → `Jwt` section); ghi đè default scheme vì `AddIdentity` tự đặt cookie làm mặc định; bật lại `MapInboundClaims = true` (mặc định .NET 8+ là `false`, sẽ phá `[Authorize(Roles=...)]` nếu không set)
+- [x] Endpoint `GET /api/auth/me` (`[Authorize]`) để xác nhận JWT hoạt động — trả về toàn bộ claims thật trong token
+
+**Mục tiêu cuối ngày:** đạt — test thật bằng curl: register → 201, login → 200 kèm JWT, `/me` không token → 401, `/me` có token → 200 với đúng claims (userId=1, email, fullName).
 
 **Mục tiêu cuối ngày:** đăng ký → đăng nhập → nhận JWT → gọi được endpoint có `[Authorize]`.
 

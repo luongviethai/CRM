@@ -1,3 +1,4 @@
+using CRM.Application.Auth;
 using CRM.Application.Common.Interfaces;
 using CRM.Infrastructure.Identity;
 using CRM.Infrastructure.Persistence;
@@ -22,6 +23,10 @@ public static class DependencyInjection
         services
             .AddIdentity<ApplicationUser, ApplicationRole>()
             .AddEntityFrameworkStores<AppDbContext>();
+
+        services.Configure<JwtSettings>(configuration.GetSection("Jwt"));
+        services.AddScoped<IIdentityService, IdentityService>();
+        services.AddScoped<ITokenService, JwtTokenService>();
 
         // Đăng ký repository... sẽ bổ sung từ Ngày 3 trở đi.
         return services;
