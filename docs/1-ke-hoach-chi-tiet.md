@@ -140,11 +140,11 @@ Tự trả lời trước khi qua tuần 2:
 **Mục tiêu cuối ngày:** đạt — test thật bằng curl: login → refresh (rotate, token mới khác token cũ) → dùng lại token cũ → 401 + token mới cũng bị revoke theo (reuse detection) → logout → dùng lại sau logout → 401. Verify trực tiếp trong Postgres: `TokenHash` là hash hex, không phải token gốc.
 
 ### Ngày 11 (Thứ 5) — Role-based authorization
-- [ ] Seed 3 role: Admin, Manager, Staff lúc khởi động app (idempotent, không tạo trùng)
-- [ ] Gán role cho user khi đăng ký (mặc định Staff) hoặc qua endpoint admin gán role
-- [ ] Áp `[Authorize(Roles = "Admin,Manager")]` tạm cho 1-2 endpoint nhạy cảm để kiểm tra hoạt động
+- [x] Seed 3 role: Admin, Manager, Staff lúc khởi động app (`IdentitySeeder.SeedRolesAsync`, chạy ở MỌI môi trường — idempotent, check `RoleExistsAsync` trước khi tạo)
+- [x] Gán role cho user khi đăng ký (mặc định Staff, trong `IdentityService.RegisterAsync`); seed thêm 1 tài khoản `admin@crm.local` (role Admin) ở Development để có thể test ngay — không có đường nào "tự phong" Admin đầu tiên qua API nếu không seed sẵn
+- [x] Áp `[Authorize(Roles = "Admin,Manager")]` tạm cho `DELETE /api/products/{id}` và `DELETE /api/categories/{id}` (Ngày 12-13 sẽ thay bằng permission-based policy)
 
-**Mục tiêu cuối ngày:** 3 role tồn tại trong DB, phân quyền theo role chặn/cho phép đúng trên endpoint thử nghiệm.
+**Mục tiêu cuối ngày:** đạt — test thật: không token → `401`; token Staff → `403` (phân biệt đúng với 401); token Admin → `404` (qua được authorization, service đúng báo not found vì id test không tồn tại). Xác nhận role claim thật nằm trong token qua `/api/auth/me`.
 
 ### Ngày 12 (Thứ 6) — Thiết kế permission
 - [ ] Định nghĩa danh sách permission dạng `resource.action` (xem danh sách đầy đủ ở tài liệu nghiệp vụ, mục ma trận phân quyền)

@@ -1,6 +1,7 @@
 using CRM.Application.Categories;
 using CRM.Application.Categories.Dtos;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.Api.Controllers;
@@ -75,6 +76,9 @@ public class CategoriesController : ControllerBase
         return Ok(updatedCategory);
     }
 
+    // Tạm áp role ở đây để kiểm tra [Authorize(Roles=...)] hoạt động đúng (Ngày 11) — Ngày 12-13
+    // sẽ thay bằng permission-based policy, không còn hard-code role nữa.
+    [Authorize(Roles = "Admin,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id)
     {

@@ -1,6 +1,7 @@
 using CRM.Application.Products;
 using CRM.Application.Products.Dtos;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using CRM.Application.Common.Models;
 
@@ -76,6 +77,9 @@ public class ProductsController : ControllerBase
         return Ok(updatedProduct);
     }
 
+    // Tạm áp role ở đây để kiểm tra [Authorize(Roles=...)] hoạt động đúng (Ngày 11) — Ngày 12-13
+    // sẽ thay bằng permission-based policy ("product.delete"), không còn hard-code role nữa.
+    [Authorize(Roles = "Admin,Manager")]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id)
     {

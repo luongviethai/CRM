@@ -2,8 +2,10 @@ using System.Text;
 using CRM.Api.Middleware;
 using CRM.Application;
 using CRM.Infrastructure;
+using CRM.Infrastructure.Identity;
 using CRM.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -49,6 +51,14 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
+// Chạy ở mọi môi trường — 3 role (Admin/Manager/Staff) là cấu trúc hệ thống, không phải
+// dữ liệu demo, nên không gói trong khối IsDevelopment() dưới đây.
+using (var roleSeedScope = app.Services.CreateScope())
+{
+    var roleManager = roleSeedScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    await IdentitySeeder.SeedRolesAsync(roleManager);
+}
+
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
@@ -57,6 +67,9 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await DbInitializer.SeedAsync(db);
+
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<ApplicationUser>>();
+    await IdentitySeeder.SeedDevAdminAsync(userManager);
 }
 
 app.UseExceptionHandler();

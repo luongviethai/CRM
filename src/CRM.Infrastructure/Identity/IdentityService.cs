@@ -37,6 +37,10 @@ public class IdentityService : IIdentityService
             return new RegisterResult(false, null, result.Errors.Select(e => e.Description).ToList());
         }
 
+        // Mọi user tự đăng ký đều mặc định Staff — Admin/Manager chỉ gán được qua seed dev
+        // hoặc (sau này) qua tay Admin, không ai tự phong quyền cao hơn cho mình được.
+        await _userManager.AddToRoleAsync(user, "Staff");
+
         return new RegisterResult(true, user.Id, []);
     }
 
