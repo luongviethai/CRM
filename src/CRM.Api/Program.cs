@@ -51,12 +51,16 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// Chạy ở mọi môi trường — 3 role (Admin/Manager/Staff) là cấu trúc hệ thống, không phải
-// dữ liệu demo, nên không gói trong khối IsDevelopment() dưới đây.
+// Chạy ở mọi môi trường — role, permission và ma trận gán quyền là cấu trúc hệ thống,
+// không phải dữ liệu demo, nên không gói trong khối IsDevelopment() dưới đây.
 using (var roleSeedScope = app.Services.CreateScope())
 {
     var roleManager = roleSeedScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
+    var dbContext = roleSeedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+
     await IdentitySeeder.SeedRolesAsync(roleManager);
+    await IdentitySeeder.SeedPermissionsAsync(dbContext);
+    await IdentitySeeder.SeedRolePermissionsAsync(dbContext, roleManager);
 }
 
 if (app.Environment.IsDevelopment())

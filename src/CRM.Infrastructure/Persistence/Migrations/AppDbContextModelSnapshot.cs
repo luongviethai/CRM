@@ -341,6 +341,31 @@ namespace CRM.Infrastructure.Persistence.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("CRM.Infrastructure.Identity.Permission", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Description")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Name")
+                        .IsUnique();
+
+                    b.ToTable("Permissions");
+                });
+
             modelBuilder.Entity("CRM.Infrastructure.Identity.RefreshToken", b =>
                 {
                     b.Property<int>("Id")
@@ -378,6 +403,21 @@ namespace CRM.Infrastructure.Persistence.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("RefreshTokens");
+                });
+
+            modelBuilder.Entity("CRM.Infrastructure.Identity.RolePermission", b =>
+                {
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("PermissionId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("RoleId", "PermissionId");
+
+                    b.HasIndex("PermissionId");
+
+                    b.ToTable("RolePermissions");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>
@@ -547,6 +587,25 @@ namespace CRM.Infrastructure.Persistence.Migrations
                         .IsRequired();
 
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("CRM.Infrastructure.Identity.RolePermission", b =>
+                {
+                    b.HasOne("CRM.Infrastructure.Identity.Permission", "Permission")
+                        .WithMany()
+                        .HasForeignKey("PermissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("CRM.Infrastructure.Identity.ApplicationRole", "Role")
+                        .WithMany()
+                        .HasForeignKey("RoleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Permission");
+
+                    b.Navigation("Role");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<int>", b =>

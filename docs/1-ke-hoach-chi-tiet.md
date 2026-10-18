@@ -147,12 +147,12 @@ Tự trả lời trước khi qua tuần 2:
 **Mục tiêu cuối ngày:** đạt — test thật: không token → `401`; token Staff → `403` (phân biệt đúng với 401); token Admin → `404` (qua được authorization, service đúng báo not found vì id test không tồn tại). Xác nhận role claim thật nằm trong token qua `/api/auth/me`.
 
 ### Ngày 12 (Thứ 6) — Thiết kế permission
-- [ ] Định nghĩa danh sách permission dạng `resource.action` (xem danh sách đầy đủ ở tài liệu nghiệp vụ, mục ma trận phân quyền)
-- [ ] Entity `Permission` + bảng nối `RolePermission` (many-to-many Role-Permission)
-- [ ] Seed permission mặc định theo từng role (Admin = tất cả, Manager/Staff theo ma trận)
-- [ ] Migration + kiểm tra dữ liệu seed đúng
+- [x] `PermissionCatalog` — 19 hằng số `resource.action` khớp đúng ma trận ở tài liệu nghiệp vụ mục 6 (tránh gõ tay chuỗi rải rác, sẽ dùng lại cho `[Authorize(Policy=...)]` ở Ngày 13)
+- [x] Entity `Permission` + bảng nối `RolePermission` (many-to-many Role-Permission, đặt ở `CRM.Infrastructure/Identity/` cùng `ApplicationUser`/`RefreshToken` — không phải business entity)
+- [x] Seed permission + ma trận gán theo role (`IdentitySeeder.SeedPermissionsAsync`/`SeedRolePermissionsAsync`, chạy ở MỌI môi trường, idempotent) — Admin = tất cả 19, Manager = 15, Staff = 9
+- [x] Migration `AddPermissions` + kiểm tra dữ liệu seed đúng
 
-**Mục tiêu cuối ngày:** bảng Role-Permission có dữ liệu đúng theo ma trận phân quyền đã thiết kế.
+**Mục tiêu cuối ngày:** đạt — verify trực tiếp trong Postgres: tổng 19 permission, số lượng đúng theo role (Admin 19 / Manager 15 / Staff 9), danh sách permission của Staff khớp chính xác ma trận. Chạy app lần 2 xác nhận không tạo trùng dữ liệu (idempotent).
 
 ### Ngày 13 (Thứ 7, nhiều thời gian hơn) — Policy provider động
 - [ ] Viết `IAuthorizationRequirement` custom cho permission (ví dụ `PermissionRequirement`)
