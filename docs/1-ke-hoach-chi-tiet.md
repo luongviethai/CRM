@@ -155,22 +155,22 @@ Tự trả lời trước khi qua tuần 2:
 **Mục tiêu cuối ngày:** đạt — verify trực tiếp trong Postgres: tổng 19 permission, số lượng đúng theo role (Admin 19 / Manager 15 / Staff 9), danh sách permission của Staff khớp chính xác ma trận. Chạy app lần 2 xác nhận không tạo trùng dữ liệu (idempotent).
 
 ### Ngày 13 (Thứ 7, nhiều thời gian hơn) — Policy provider động
-- [ ] Viết `IAuthorizationRequirement` custom cho permission (ví dụ `PermissionRequirement`)
-- [ ] Viết `IAuthorizationHandler` đọc permission của user (qua role → RolePermission) để quyết định cho phép
-- [ ] Viết `IAuthorizationPolicyProvider` để tạo policy động theo tên permission (không cần khai báo cứng từng policy trong `Program.cs`)
-- [ ] Áp dụng `[Authorize(Policy = "product.create")]` cho vài endpoint CRUD đã làm ở tuần 1
-- [ ] **Nếu hết thời gian:** chuyển sang fallback — khai báo policy tĩnh trong `Program.cs` cho các permission đang dùng, ghi chú rõ trong README là nợ kỹ thuật cần hoàn thiện ở Project 2
+- [x] `PermissionRequirement` (`IAuthorizationRequirement`) — chỉ chứa tên permission, không có logic
+- [x] `PermissionAuthorizationHandler` (`AuthorizationHandler<PermissionRequirement>`) — đọc role từ claim của user, query `RolePermissions` thật trong DB để quyết định `Succeed`
+- [x] `PermissionPolicyProvider` (`IAuthorizationPolicyProvider`) — tự "chế" `AuthorizationPolicy` theo tên permission ngay lúc được hỏi, validate tên qua `PermissionCatalog` trước, không khớp thì giao cho `DefaultAuthorizationPolicyProvider`
+- [x] Áp `[Authorize(Policy = PermissionCatalog.ProductCreate/.ProductUpdate/.ProductDelete)]` cho Product, `[Authorize(Policy = PermissionCatalog.CategoryManage)]` cho Category Delete — thay thế hoàn toàn `[Authorize(Roles=...)]` tạm ở Ngày 11
+- [x] **Fix 1 lỗi thật phát hiện qua việc chuyển sang permission**: `[Authorize(Roles="Admin,Manager")]` ở Ngày 11 cho cả Manager xóa Product — sai so với ma trận (chỉ Admin có `product.delete`). Permission-based policy sửa đúng lại.
 
-**Mục tiêu cuối ngày:** ít nhất 1-2 endpoint được bảo vệ bằng permission policy (động hoặc tĩnh tạm thời), có ghi chú rõ trạng thái.
+**Mục tiêu cuối ngày:** đạt — test thật với 3 role (Staff/Manager/Admin) qua 4 endpoint: Staff bị chặn đúng `403` ở `product.create`/`category.manage`; Manager tạo Product thành công (`201`) nhưng bị chặn đúng `403` khi xóa Product (khác hành vi sai ở Ngày 11); Admin qua hết; không token → `401`.
 
 ### Ngày 14 (Chủ nhật, nhiều thời gian hơn) — API quản lý role/permission, Swagger Bearer, tổng kết tuần
-- [ ] API CRUD Role (tạo role mới, xem danh sách)
-- [ ] API gán/bỏ permission cho role, API gán role cho user
-- [ ] Cấu hình Swagger hỗ trợ nhập Bearer token (`AddSecurityDefinition` + `AddSecurityRequirement`)
-- [ ] Test lại toàn bộ luồng auth qua Swagger UI (login → copy token → gọi API có policy)
-- [ ] Dọn code, commit
+- [x] API CRUD Role: `GET/POST /api/roles` (permission `role.manage`), `GET /api/roles/{id}` — trả kèm danh sách permission của role
+- [x] API gán/bỏ permission cho role: `POST/DELETE /api/roles/{id}/permissions[/{permissionName}]` (permission `permission.manage`); `GET /api/permissions` liệt kê permission hợp lệ để chọn
+- [x] API gán/bỏ role cho user: `POST/DELETE /api/users/{id}/roles[/{roleName}]` (permission `user.manage`); `GET /api/users` liệt kê user kèm role hiện có
+- [x] Bearer token cho OpenAPI: project dùng `AddOpenApi()` native + Scalar (không phải Swashbuckle) nên không có `AddSecurityDefinition`/`AddSecurityRequirement` như plan gốc — thay bằng `BearerSecuritySchemeTransformer` (`IOpenApiDocumentTransformer`) tự thêm security scheme + gắn vào mọi operation
+- [x] Test lại toàn bộ luồng qua curl (tương đương test qua UI): login → dùng token gọi API có policy — **phát hiện và sửa 1 bug thật**: `UserManager.AddToRoleAsync` throw exception (không trả `IdentityResult.Failed`) khi role không tồn tại → API trả `500` thay vì `404`; đã thêm check tồn tại trước khi gọi
 
-**Mục tiêu cuối ngày:** quản lý được role/permission qua API, Swagger test được endpoint có JWT trực tiếp trên UI.
+**Mục tiêu cuối ngày:** đạt — quản lý được role/permission/user-role qua API, đều có permission-policy đúng (test qua cả Admin và Staff), OpenAPI doc có security scheme Bearer gắn đúng vào mọi operation (verify trực tiếp trong JSON trả về), Scalar UI (`/scalar/v1`) load được. Code chưa commit — chờ xác nhận trước khi commit.
 
 ### Tổng kết tuần 2
 Tự trả lời trước khi qua tuần 3:

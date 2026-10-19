@@ -1,17 +1,20 @@
 using System.Text;
 using CRM.Api.Middleware;
+using CRM.Api.OpenApi;
 using CRM.Application;
 using CRM.Infrastructure;
+using CRM.Infrastructure.Authorization;
 using CRM.Infrastructure.Identity;
 using CRM.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(options => options.AddDocumentTransformer<BearerSecuritySchemeTransformer>());
 builder.Services.AddControllers();
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -48,6 +51,11 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+
+// Thay IAuthorizationPolicyProvider mặc định (tra dictionary tĩnh) bằng bản tự "chế" policy
+// theo tên permission ngay lúc được hỏi — không cần AddPolicy() khai báo tay từng permission.
+builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+builder.Services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 var app = builder.Build();
 

@@ -1,5 +1,6 @@
 using CRM.Application.Products;
 using CRM.Application.Products.Dtos;
+using CRM.Infrastructure.Identity;
 using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -44,6 +45,7 @@ public class ProductsController : ControllerBase
         return Ok(product);
     }
 
+    [Authorize(Policy = PermissionCatalog.ProductCreate)]
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateProductRequest request)
     {
@@ -58,6 +60,7 @@ public class ProductsController : ControllerBase
         return CreatedAtRoute("GetProductById", new { id = product.Id }, product);
     }
 
+    [Authorize(Policy = PermissionCatalog.ProductUpdate)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateProductRequest request)
     {
@@ -77,9 +80,9 @@ public class ProductsController : ControllerBase
         return Ok(updatedProduct);
     }
 
-    // Tạm áp role ở đây để kiểm tra [Authorize(Roles=...)] hoạt động đúng (Ngày 11) — Ngày 12-13
-    // sẽ thay bằng permission-based policy ("product.delete"), không còn hard-code role nữa.
-    [Authorize(Roles = "Admin,Manager")]
+    // Permission-based thật (Ngày 13) — thay cho [Authorize(Roles="Admin,Manager")] tạm ở Ngày 11.
+    // Đúng ma trận: product.delete chỉ Admin có, Manager KHÔNG có (khác với Ngày 11 cho cả 2).
+    [Authorize(Policy = PermissionCatalog.ProductDelete)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id)
     {
