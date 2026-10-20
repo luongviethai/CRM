@@ -16,5 +16,6 @@ namespace CRM.Domain.Entities
         public Category Category { get; set; } = null!;
         public Supplier Supplier { get; set; } = null!;
         public ICollection<OrderItem> OrderItems { get; set; } = new List<OrderItem>();
+        public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
     }
 }

@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using CRM.Application.Common.Interfaces;
 using CRM.Domain.Entities;
 using CRM.Infrastructure.Identity;
+using Microsoft.EntityFrameworkCore.Storage;
 
 namespace CRM.Infrastructure.Persistence;
 
@@ -18,9 +19,13 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, ApplicationRole, 
     public DbSet<OrderItem> OrderItems { get; set; }
     public DbSet<Product> Products { get; set; }
     public DbSet<Supplier> Suppliers { get; set; }
+    public DbSet<StockMovement> StockMovements { get; set; }
     public DbSet<RefreshToken> RefreshTokens { get; set; }
     public DbSet<Permission> Permissions { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
+
+    public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
+        => Database.BeginTransactionAsync(cancellationToken);
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
