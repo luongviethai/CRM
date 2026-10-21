@@ -3,6 +3,7 @@ using CRM.Application.Customers;
 using CRM.Application.Products;
 using CRM.Application.Suppliers;
 using CRM.Application.Orders;
+using CRM.Application.StockMovements;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +18,7 @@ public static class DependencyInjection
         services.AddScoped<ISupplierService, SupplierService>();
         services.AddScoped<ICustomerService, CustomerService>();
         services.AddScoped<IOrderService, OrderService>();
+        services.AddScoped<IStockMovementService, StockMovementService>();
 
 
         // Quét toàn bộ assembly Application, tự đăng ký mọi class kế thừa AbstractValidator<T>
