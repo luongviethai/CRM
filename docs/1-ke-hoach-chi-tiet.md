@@ -215,40 +215,33 @@ Tự trả lời trước khi qua tuần 3:
 
 **Mục tiêu cuối ngày:** có thể nhập/điều chỉnh kho thủ công, và tra được lịch sử biến động kho của 1 sản phẩm.
 
-### Ngày 19 (Thứ 6) — Serilog
-- [ ] Cài `Serilog.AspNetCore` + sink Console + sink File (rolling theo ngày)
-- [ ] Cấu hình structured logging (message template, không string concat)
-- [ ] Log các event nghiệp vụ quan trọng: tạo đơn thành công/thất bại, hủy đơn, thay đổi kho, lỗi concurrency
-- [ ] Set mức log hợp lý theo môi trường (Development vs Production)
+### Ngày 19 (Thứ 6) — Serilog — **BỎ QUA**
+> Quyết định của người học: bỏ qua Ngày 19 vì không ảnh hưởng nghiệp vụ. Logging mặc định của ASP.NET Core vẫn hoạt động (console). Ghi nợ kỹ thuật, mang sang Project 2 nếu cần.
 
-**Mục tiêu cuối ngày:** log xuất hiện ở console và file, đọc được rõ sự kiện nghiệp vụ chính khi vận hành.
-
-### Ngày 20 (Thứ 7, nhiều thời gian hơn) — Unit test
-- [ ] Cài xUnit + thư viện mock (Moq hoặc NSubstitute)
-- [ ] Unit test cho `CreateOrder`: trừ kho đúng, rollback khi lỗi, chặn khi không đủ kho
-- [ ] Unit test cho `CancelOrder`: hoàn kho đúng, chặn hủy khi không hợp lệ
-- [ ] Unit test cho StockMovement (loại nghiệp vụ nào sinh ra loại movement nào)
-- [ ] Chạy `dotnet test`, đảm bảo pass toàn bộ
-
-**Mục tiêu cuối ngày:** các service nghiệp vụ cốt lõi (order, stock) có test pass, không phụ thuộc DB thật (mock repository/DbContext theo cách phù hợp).
+### Ngày 20 (Thứ 7, nhiều thời gian hơn) — Unit test — **BỎ QUA**
+> Quyết định của người học: bỏ qua Ngày 20 vì không ảnh hưởng nghiệp vụ. Hệ quả: tiêu chí "có test" trong `dotnet-roadmap.md` chưa đạt — ghi nhận công khai ở phần tổng kết bên dưới, không coi như đã hoàn thành. Toàn bộ nghiệp vụ Tuần 3 (CreateOrder/CancelOrder/concurrency/StockMovement) đã được verify bằng test thủ công (curl thật, kể cả kịch bản 2 request đồng thời) thay cho unit test tự động.
 
 ### Ngày 21 (Chủ nhật, nhiều thời gian hơn) — Docker Compose, README, ERD, tổng kết Project 1
 > Cập nhật: `docker-compose.yml` (service `postgres`) và `docker/Dockerfile` (build API) đã tạo sẵn từ Ngày 2. Việc còn lại ở ngày này chỉ là **gắn thêm service `api`** vào compose, không phải viết từ đầu.
-- [ ] Thêm service `api` vào `docker-compose.yml`: `build: {context: ., dockerfile: docker/Dockerfile}`, `depends_on: postgres (condition: service_healthy)`, connection string trỏ tới service `postgres` (host = tên service, không phải `localhost`)
-- [ ] Kiểm tra lại `docker/Dockerfile` (đã tạo từ Ngày 2) còn phù hợp không, build thử image
-- [ ] Chạy `docker compose up` từ đầu (xóa volume cũ nếu cần) → xác nhận chạy được end-to-end (cả API lẫn Postgres đều trong container)
-- [ ] Hoàn thiện README: mô tả project, cách chạy (`docker compose up`), cách chạy test, sơ đồ ERD (ảnh hoặc link), danh sách endpoint chính
-- [ ] Rà lại toàn bộ tiêu chí hoàn thành Project 1
+- [x] Thêm service `api` vào `docker-compose.yml`: build từ `docker/Dockerfile`, `depends_on: postgres (condition: service_healthy)`, connection string trỏ `Host=postgres;Port=5432` (qua env var `ConnectionStrings__Default`, không sửa appsettings). Cổng host đổi thành `8090` (máy dev đã có service khác chiếm `8080`).
+- [x] Kiểm tra `docker/Dockerfile` — build thử image thành công, không cần sửa gì (đã đúng từ Ngày 2).
+- [x] **Phát hiện + sửa 1 bug khi test "chạy từ đầu"**: `Program.cs` trước đây không tự áp migration — trên volume Postgres hoàn toàn trống, app crash ngay ở bước seed role vì bảng `AspNetRoles` chưa tồn tại (trước giờ luôn chạy được vì DB dev local đã có migration áp sẵn bằng tay, chưa ai test lại từ đầu thật sự). Thêm `await dbContext.Database.MigrateAsync();` vào đúng khối seed không-điều-kiện-môi-trường. Verify lại bằng Postgres + container hoàn toàn mới (network/volume cô lập, không đụng `crm-postgres` thật): tự tạo đủ 18 bảng, seed role/permission/admin, health check `200`, login thành công.
+- [x] Chạy `docker compose up -d api` thật lên `crm-postgres` đang chạy — 2 container `Up`, `GET /api/products` trả dữ liệu thật qua container.
+- [x] Hoàn thiện README: mô tả project, 2 cách chạy (Docker Compose / `dotnet run`), link ERD, bảng đầy đủ endpoint + permission yêu cầu, nợ kỹ thuật.
+- [x] Rà lại toàn bộ tiêu chí hoàn thành Project 1 — **phát hiện thêm 1 lỗ hổng permission thật**: `CategoriesController` (GET/POST/PUT), `SuppliersController`, `CustomersController` gần như không có `[Authorize]` nào dù `PermissionCatalog` đã định nghĩa đủ `category.view/manage`, `supplier.view/manage`, `customer.view/manage` từ Ngày 12 — nghĩa là bất kỳ ai, kể cả chưa đăng nhập, đều gọi được các API này. Đã sửa đúng theo ma trận ở mục 9 `docs/2-tai-lieu-nghiep-vu.md`, verify lại: gọi không token → `401`; gọi có token Admin → `200` như cũ.
 
-**Mục tiêu cuối ngày:** `docker compose up` chạy được từ máy sạch, test pass, README đầy đủ.
+**Mục tiêu cuối ngày:** đạt — `docker compose up` chạy được từ máy sạch (volume trống), README đầy đủ. **Chưa đạt:** "test pass" (không có unit test, xem Ngày 20).
 
 ### Tổng kết tuần 3 (và tổng kết Project 1)
-- [ ] Giải thích được vì sao cần transaction khi tạo/hủy đơn hàng
-- [ ] Giải thích được cơ chế optimistic concurrency đang dùng hoạt động ra sao
-- [ ] Giải thích được StockMovement giải quyết vấn đề gì (truy vết lịch sử thay đổi kho)
-- [ ] Đối chiếu lại "Hoàn thành Project 1 khi" ở `dotnet-roadmap.md`: `docker compose up` ✓, test ✓, README ✓
-- [ ] Cập nhật dòng "Tuần 3" trong bảng tiến độ ở `dotnet-roadmap.md`
-- [ ] Ghi lại danh sách nợ kỹ thuật (nếu có, ví dụ policy provider động chưa xong) để mang qua Project 2
+- [x] Giải thích được vì sao cần transaction khi tạo/hủy đơn hàng — xem phần lý thuyết Ngày 15/16 trong hội thoại: nhiều thay đổi (Order + OrderItem + Product.StockQuantity + StockMovement) phải được coi là 1 đơn vị duy nhất, tránh trạng thái "lưng chừng" nếu lỗi giữa chừng (ví dụ đã trừ kho nhưng chưa tạo được Order).
+- [x] Giải thích được cơ chế optimistic concurrency đang dùng hoạt động ra sao — `xmin` (cột hệ thống Postgres, shadow property) được EF Core tự thêm vào `WHERE` của câu `UPDATE Product`; nếu giá trị đã đổi do request khác ghi trước, `UPDATE` khớp 0 dòng → EF tự ném `DbUpdateConcurrencyException` → bắt lại, trả `409`. Đã verify thật bằng 2 request đồng thời ở Ngày 17 (1 thành công `201`, 1 nhận đúng `409`, tồn kho cuối cùng chính xác, không bị lost-update).
+- [x] Giải thích được StockMovement giải quyết vấn đề gì — `Product.StockQuantity` chỉ là "số dư hiện tại" (giống số dư tài khoản ngân hàng), không trả lời được "vì sao". `StockMovement` là sổ cái append-only, mỗi dòng ghi rõ +/- bao nhiêu, loại gì (Import/Export/Adjustment), liên quan nguồn nào (`Reference`) — cho phép truy vết/kiểm toán lịch sử kho mà chỉ 1 con số không bao giờ làm được.
+- [x] Đối chiếu lại "Hoàn thành Project 1 khi" ở `dotnet-roadmap.md`: `docker compose up` ✓ (verify thật, kể cả từ volume trống), README ✓, **test ✗** (bỏ qua Ngày 20 theo quyết định có chủ đích — xem ghi chú Ngày 20).
+- [x] Cập nhật dòng "Tuần 2" và "Tuần 3" trong bảng tiến độ ở `dotnet-roadmap.md`.
+- [x] Nợ kỹ thuật mang qua Project 2:
+  - Không có unit test (Ngày 20 bỏ qua) và không có Serilog/structured logging (Ngày 19 bỏ qua).
+  - Đã phát hiện và sửa 2 gap thật trong chính Ngày 21 (migration tự động lúc khởi động, permission thiếu ở Category/Supplier/Customer) — nhắc nhở: nên "rà lại từ đầu trên máy sạch" sớm hơn, không đợi tới ngày cuối cùng mới phát hiện.
+  - Policy provider động (Ngày 13) đã hoàn thành đúng kế hoạch, không còn là nợ kỹ thuật như ghi chú dự phòng ban đầu trong `dotnet-roadmap.md`.
 
 ---
 

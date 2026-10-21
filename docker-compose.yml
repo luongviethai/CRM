@@ -20,7 +20,27 @@ services:
       retries: 5
     restart: unless-stopped
 
-  # Service "api" sẽ bật ở Ngày 21 (Tuần 3), build từ docker/Dockerfile, cùng network với postgres.
+  api:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    container_name: crm-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Dùng config Development (Jwt settings đã có sẵn trong appsettings.Development.json) để
+      # còn seed dữ liệu mẫu + Scalar UI khi chạy local qua compose — không phải deploy thật.
+      ASPNETCORE_ENVIRONMENT: Development
+      # Trong network của compose, Postgres được gọi qua tên service "postgres" + cổng nội bộ
+      # 5432 (không phải "localhost:5435" — đó là cổng map ra ngoài host, chỉ dùng khi connect
+      # từ máy thật, không dùng được từ bên trong 1 container khác).
+      ConnectionStrings__Default: "Host=postgres;Port=5432;Database=crm_db;Username=crm_user;Password=crm_dev_password;"
+    ports:
+      # Map ra cổng ngoài 8090 — máy dev có thể đã chiếm 8080 bởi project khác (tương tự lý do
+      # Postgres map ra 5435 thay vì 5432). Bên trong container API vẫn luôn lắng nghe ở 8080.
+      - "8090:8080"
+    restart: unless-stopped
 
 volumes:
   crm-postgres-data:

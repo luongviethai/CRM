@@ -1,6 +1,8 @@
 using CRM.Application.Suppliers;
 using CRM.Application.Suppliers.Dtos;
+using CRM.Infrastructure.Identity;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CRM.Api.Controllers;
@@ -23,6 +25,7 @@ public class SuppliersController : ControllerBase
         _updateValidator = updateValidator;
     }
 
+    [Authorize(Policy = PermissionCatalog.SupplierView)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -30,6 +33,7 @@ public class SuppliersController : ControllerBase
         return Ok(suppliers);
     }
 
+    [Authorize(Policy = PermissionCatalog.SupplierView)]
     [HttpGet("{id:int}", Name = "GetSupplierById")]
     public async Task<IActionResult> GetByIdAsync(int id)
     {
@@ -42,6 +46,7 @@ public class SuppliersController : ControllerBase
         return Ok(supplier);
     }
 
+    [Authorize(Policy = PermissionCatalog.SupplierManage)]
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateSupplierRequest request)
     {
@@ -56,6 +61,7 @@ public class SuppliersController : ControllerBase
         return CreatedAtRoute("GetSupplierById", new { id = supplier.Id }, supplier);
     }
 
+    [Authorize(Policy = PermissionCatalog.SupplierManage)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateSupplierRequest request)
     {
@@ -75,6 +81,7 @@ public class SuppliersController : ControllerBase
         return Ok(updatedSupplier);
     }
 
+    [Authorize(Policy = PermissionCatalog.SupplierManage)]
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteAsync(int id)
     {

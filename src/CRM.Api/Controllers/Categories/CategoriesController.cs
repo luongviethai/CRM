@@ -25,6 +25,7 @@ public class CategoriesController : ControllerBase
         _updateValidator = updateValidator;
     }
 
+    [Authorize(Policy = PermissionCatalog.CategoryView)]
     [HttpGet]
     public async Task<IActionResult> GetAll()
     {
@@ -32,6 +33,7 @@ public class CategoriesController : ControllerBase
         return Ok(categories);
     }
 
+    [Authorize(Policy = PermissionCatalog.CategoryView)]
     [HttpGet("{id:int}", Name = "GetCategoryById")]
     public async Task<IActionResult> GetByIdAsync(int id)
     {
@@ -44,6 +46,7 @@ public class CategoriesController : ControllerBase
         return Ok(category);
     }
 
+    [Authorize(Policy = PermissionCatalog.CategoryManage)]
     [HttpPost]
     public async Task<IActionResult> CreateAsync([FromBody] CreateCategoryRequest request)
     {
@@ -58,6 +61,7 @@ public class CategoriesController : ControllerBase
         return CreatedAtRoute("GetCategoryById", new { id = category.Id }, category);
     }
 
+    [Authorize(Policy = PermissionCatalog.CategoryManage)]
     [HttpPut("{id:int}")]
     public async Task<IActionResult> UpdateAsync(int id, [FromBody] UpdateCategoryRequest request)
     {

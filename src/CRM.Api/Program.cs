@@ -9,6 +9,7 @@ using CRM.Infrastructure.Persistence;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Scalar.AspNetCore;
 
@@ -65,6 +66,11 @@ using (var roleSeedScope = app.Services.CreateScope())
 {
     var roleManager = roleSeedScope.ServiceProvider.GetRequiredService<RoleManager<ApplicationRole>>();
     var dbContext = roleSeedScope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    // Bắt buộc cho docker compose up trên máy sạch (volume Postgres rỗng, chưa có bảng nào) —
+    // trước đây migration chỉ được áp bằng tay (`dotnet ef database update`) nên container mới
+    // sẽ crash ngay ở seed roles vì bảng AspNetRoles chưa tồn tại.
+    await dbContext.Database.MigrateAsync();
 
     await IdentitySeeder.SeedRolesAsync(roleManager);
     await IdentitySeeder.SeedPermissionsAsync(dbContext);
