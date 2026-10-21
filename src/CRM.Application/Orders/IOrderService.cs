@@ -5,4 +5,6 @@ namespace CRM.Application.Orders;
 public interface IOrderService
 {
     Task<CreateOrderResult> CreateOrderAsync(CreateOrderRequest request, int createdByUserId);
+
+    Task<CancelOrderResult?> CancelOrderAsync(int orderId);
 }

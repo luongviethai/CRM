@@ -41,4 +41,25 @@ public class OrdersController : ControllerBase
 
         return StatusCode(StatusCodes.Status201Created, result.Order);
     }
+
+    [Authorize(Policy = PermissionCatalog.OrderCancel)]
+    [HttpPost("{id:int}/cancel")]
+
+    public async Task<IActionResult> Cancel(int id)
+    {
+        var result = await _orderService.CancelOrderAsync(id);
+
+        if (result is null)
+        {
+            return NotFound();
+        }
+
+        if (!result.Succeeded)
+        {
+            return BadRequest(result.Error);
+        }
+
+        return Ok(result.Order);
+    }
 }
+
