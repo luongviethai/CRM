@@ -37,9 +37,17 @@ public class OrderService : IOrderService
         }
         foreach (var item in request.Items)
         {
-            if (!products.ContainsKey(item.ProductId))
+            if (!products.TryGetValue(item.ProductId, out var product))
             {
                 errors.Add($"Product #{item.ProductId} không tồn tại.");
+                continue;
+            }
+
+            if (product.StockQuantity < item.Quantity)
+            {
+                errors.Add(
+                    $"Product #{item.ProductId} không đủ hàng (còn {product.StockQuantity}, cần {item.Quantity})."
+                );
             }
         }
 
@@ -51,60 +59,73 @@ public class OrderService : IOrderService
         // --- Bước 2: mở transaction, bắt đầu phần GHI ---
         await using var transaction = await _context.BeginTransactionAsync();
 
-        var order = new Order
+        try
         {
-            OrderCode = GenerateOrderCode(),
-            CustomerId = request.CustomerId,
-            OrderDate = DateTime.UtcNow,
-            Status = OrderStatus.Pending,
-            Notes = request.Notes,
-            CreatedBy = createdByUserId,
-        };
+            var order = new Order
+            {
+                OrderCode = GenerateOrderCode(),
+                CustomerId = request.CustomerId,
+                OrderDate = DateTime.UtcNow,
+                Status = OrderStatus.Pending,
+                Notes = request.Notes,
+                CreatedBy = createdByUserId,
+            };
 
-        foreach (var item in request.Items)
-        {
-            var product = products[item.ProductId];
+            foreach (var item in request.Items)
+            {
+                var product = products[item.ProductId];
 
-            order.OrderItems.Add(
-                new OrderItem
-                {
-                    ProductId = product.Id,
-                    Quantity = item.Quantity,
-                    UnitPrice = product.Price, // chốt giá tại thời điểm đặt hàng, không tham chiếu Product.Price sau này
-                }
-            );
+                order.OrderItems.Add(
+                    new OrderItem
+                    {
+                        ProductId = product.Id,
+                        Quantity = item.Quantity,
+                        UnitPrice = product.Price, // chốt giá tại thời điểm đặt hàng, không tham chiếu Product.Price sau này
+                    }
+                );
 
-            // Ngày 15 CHƯA check đủ kho hay không (đó là Ngày 17) — chỉ trừ thẳng.
-            product.StockQuantity -= item.Quantity;
+                product.StockQuantity -= item.Quantity;
+            }
+
+            order.TotalAmount = order.OrderItems.Sum(oi => oi.TotalPrice);
+
+            _context.Orders.Add(order);
+            await _context.SaveChangesAsync(); // (1) Order.Id có giá trị thật sau dòng này — đây cũng là lần UPDATE Product, chỗ concurrency token (xmin) được kiểm tra
+
+            foreach (var item in order.OrderItems)
+            {
+                _context.StockMovements.Add(
+                    new StockMovement
+                    {
+                        ProductId = item.ProductId,
+                        Type = StockMovementType.Export,
+                        Quantity = -item.Quantity, // âm vì kho giảm
+                        Reference = order.Id, // giờ mới có Order.Id thật để gán
+                        CreatedAtUtc = DateTime.UtcNow,
+                    }
+                );
+            }
+
+            await _context.SaveChangesAsync(); // (2)
+
+            await transaction.CommitAsync();
+
+            return new CreateOrderResult(true, order.ToDto(customer!), []);
         }
-
-        order.TotalAmount = order.OrderItems.Sum(oi => oi.TotalPrice);
-
-        _context.Orders.Add(order);
-        await _context.SaveChangesAsync(); // (1) Order.Id có giá trị thật sau dòng này
-
-        foreach (var item in order.OrderItems)
+        catch (DbUpdateConcurrencyException)
         {
-            _context.StockMovements.Add(
-                new StockMovement
-                {
-                    ProductId = item.ProductId,
-                    Type = StockMovementType.Export,
-                    Quantity = -item.Quantity, // âm vì kho giảm
-                    Reference = order.Id, // giờ mới có Order.Id thật để gán
-                    CreatedAtUtc = DateTime.UtcNow,
-                }
+            // await using transaction tự rollback khi dispose (chưa CommitAsync) — không cần tự
+            // gọi RollbackAsync() ở đây.
+            return new CreateOrderResult(
+                false,
+                null,
+                ["Một sản phẩm trong đơn vừa được cập nhật bởi giao dịch khác, vui lòng thử lại."],
+                IsConflict: true
             );
         }
-
-        await _context.SaveChangesAsync(); // (2)
-
-        await transaction.CommitAsync();
-
-        return new CreateOrderResult(true, order.ToDto(customer!), []);
     }
 
-    public async Task<CancelOrderResult> CancelOrderAsync(int orderId)
+    public async Task<CancelOrderResult?> CancelOrderAsync(int orderId)
     {
         var order = await _context
             .Orders.Include(o => o.Customer)

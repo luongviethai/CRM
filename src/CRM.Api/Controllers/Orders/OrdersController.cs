@@ -36,7 +36,7 @@ public class OrdersController : ControllerBase
         var result = await _orderService.CreateOrderAsync(request, createdByUserId);
         if (!result.Succeeded)
         {
-            return BadRequest(result.Errors);
+            return result.IsConflict ? Conflict(result.Errors) : BadRequest(result.Errors);
         }
 
         return StatusCode(StatusCodes.Status201Created, result.Order);

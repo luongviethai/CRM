@@ -43,6 +43,13 @@ namespace CRM.Infrastructure.Persistence.Configurations
                    .WithOne(oi => oi.Product)
                    .HasForeignKey(oi => oi.ProductId)
                    .OnDelete(DeleteBehavior.Restrict);
+
+            // xmin là cột hệ thống có sẵn của Postgres, tự tăng mỗi lần UPDATE — không tạo cột
+            // mới, chỉ khai báo cho EF Core dùng nó làm concurrency token (shadow property, không
+            // có trên Product.cs, giữ Domain sạch không biết tới khái niệm đặc thù Postgres).
+            // Đặt tên đúng "xmin" (chữ thường) vì Npgsql dò theo tên này để map vào cột hệ thống.
+            builder.Property<uint>("xmin")
+                   .IsRowVersion();
         }
     }
 
